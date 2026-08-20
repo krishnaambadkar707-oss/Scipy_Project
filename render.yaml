@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: ecg-signal-analyzer
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ALLOWED_ORIGINS
+        value: https://ecg-signal-analyzer.onrender.com
