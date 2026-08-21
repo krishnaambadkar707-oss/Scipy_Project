@@ -56,4 +56,12 @@ def test_short_duration_analysis():
     assert "bpm" in response.json()["analysis"]
 
 
+def test_get_analysis_with_query_params():
+    response = client.get("/analyze?heart_rate=90&noise_level=0.1&seed=42")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["parameters"]["heart_rate"] == 90
+
+
+
 

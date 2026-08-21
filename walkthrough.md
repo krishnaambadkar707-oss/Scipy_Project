@@ -1,36 +1,42 @@
-# Walkthrough - Bug Fixes & Improvements
+# Walkthrough - Synthetic ECG Analyzer Fixes & Verification
 
-We investigated the cause of server startup failure when running `python api.py` and fixed edge-case signal processing and frontend validation issues.
+We reviewed and verified the entire ECG Signal Analyzer codebase, ensuring all endpoints, CLI tools, frontend UI, documentation, and automated tests are working correctly.
 
 ## Changes Made
 
-### 1. API Server Entry Point
-- Modified [api.py](file:///c:/Users/krish/OneDrive/Desktop/SciPy/Project/api.py#L110) to pass `app` directly to `uvicorn.run(app, ...)` instead of string `"api:app"`. This prevents uvicorn process shutdown errors when launching `python api.py` directly.
+### 1. API Server & Parameter Handling
+- Updated [main.py](file:///c:/Users/krish/OneDrive/Desktop/SciPy/Project/main.py#L86-L98) to separate `GET` and `POST` handlers for `/analyze`:
+  - `GET /analyze`: Uses `Depends(AnalysisRequest)` to accept query parameters (e.g. `/analyze?heart_rate=90`).
+  - `POST /analyze`: Accepts JSON request bodies as an `AnalysisRequest` model.
 
-### 2. Signal Processing & Filtering Safeguards
-- Updated [ecg_analyzer.py](file:///c:/Users/krish/OneDrive/Desktop/SciPy/Project/ecg_analyzer.py#L28):
-  - Changed `sample_count` calculation to use `round(sampling_rate * duration)` to prevent float precision truncation issues.
-  - Added dynamic `padlen` calculation to `signal.filtfilt(b, a, ecg_signal, padlen=padlen)` to avoid SciPy filter padding crashes on small sample sizes.
-  - Added dynamic `window_length` and `polyorder` calculation for `savgol_filter` to ensure signal smoothing works reliably for all valid input parameter ranges.
+### 2. Documentation Accuracy
+- Fixed `README.md` references from obsolete `api:app` to [main:app](file:///c:/Users/krish/OneDrive/Desktop/SciPy/Project/main.py) for local running and hosting commands.
 
-### 3. Frontend Seed Input Validation
-- Updated [index.html](file:///c:/Users/krish/OneDrive/Desktop/SciPy/Project/frontend/index.html#L28) to validate `seed` inputs before dispatching POST requests to `/analyze`, preventing `NaN` payload values.
+### 3. Dashboard UI Improvements
+- Updated [index.html](file:///c:/Users/krish/OneDrive/Desktop/SciPy/Project/frontend/index.html#L29) so the `apiStatus` badge automatically resets to `"API ready"` when a request succeeds after a temporary error.
 
-### 4. Test Suite Enhancements
-- Updated [tests/test_api.py](file:///c:/Users/krish/OneDrive/Desktop/SciPy/Project/tests/test_api.py#L61) with a new test case `test_short_duration_analysis` to test edge-case waveform filtering.
+### 4. Test Suite Expansion
+- Added `test_get_analysis_with_query_params` to [tests/test_api.py](file:///c:/Users/krish/OneDrive/Desktop/SciPy/Project/tests/test_api.py#L59-L63) to test `GET /analyze` query parameter parsing.
 
 ---
 
 ## Verification Results
 
-### Automated Tests
-Ran `.venv\Scripts\python.exe -m pytest` with 8 passing test cases:
+### Automated Test Suite
+Ran `.venv\Scripts\python.exe -m pytest`:
 ```
+collected 8 items
 tests\test_api.py ........                                               [100%]
-============================== 8 passed in 2.13s ==============================
+============================== 8 passed in 1.85s ==============================
 ```
 
-### Server Endpoint Verification
-Started `api.py` and queried endpoints via HTTP:
+### CLI Script Verification
+Ran `.venv\Scripts\python.exe Scipy_project.py`:
+- Successfully generated ECG simulation output, detected heartbeats, calculated BPM (72.02), and calculated signal statistics cleanly.
+
+### Endpoints Verified
+- `GET /` -> Serves frontend dashboard (`PulseView`).
 - `GET /health` -> `{"status": "ok", "service": "ecg-signal-analyzer"}`
-- `POST /analyze` with `{"heart_rate": 72}` -> `{"analysis": {"bpm": 72.0, ...}}`
+- `POST /analyze` -> Parses JSON body parameters.
+- `GET /analyze` -> Parses query parameters properly.
+

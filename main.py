@@ -6,7 +6,7 @@ import logging
 import os
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import Depends, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
@@ -84,9 +84,17 @@ async def health_check() -> dict[str, str]:
 
 
 @app.get("/analyze", tags=["analysis"])
+async def analyze_get(request: AnalysisRequest = Depends()) -> dict:
+    """Generate, filter, and analyze a synthetic ECG waveform via query parameters."""
+    try:
+        return analyze_ecg(**request.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
 @app.post("/analyze", tags=["analysis"])
-async def analyze(request: AnalysisRequest = AnalysisRequest()) -> dict:
-    """Generate, filter, and analyze a synthetic ECG waveform."""
+async def analyze_post(request: AnalysisRequest = AnalysisRequest()) -> dict:
+    """Generate, filter, and analyze a synthetic ECG waveform via JSON request body."""
     try:
         return analyze_ecg(**request.model_dump())
     except ValueError as exc:
